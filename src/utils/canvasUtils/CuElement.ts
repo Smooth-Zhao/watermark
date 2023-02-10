@@ -33,6 +33,13 @@ export default class CuElement<Props extends ElementProps = ElementProps> {
     return null
   }
 
+  traverse<Context>(
+    cb: (this: Context, el: this) => void,
+    context?: Context
+  ) {
+    cb.call(context as Context, this)
+  }
+
   attr(keyOrObj: Props): this
   attr<T extends keyof Props>(keyOrObj: T, value: Props[T]): this
   attr(keyOrObj: keyof Props | Props, value?: unknown): this {

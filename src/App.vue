@@ -15,10 +15,29 @@
             @click="onDownload"
           >下载图片</div>
         </div>
+        <div class="panel font">
+          <div class="title">字体</div>
+          <div class="content">
+            <div style="margin-bottom: 12px;">当前字体：{{ config.fontFamily || '无' }}</div>
+            <div style="display: flex;">
+              <select v-model="fontSelect" class="font-select">
+                <option
+                  v-for="(item, index) in fonts"
+                  :key="index"
+                  :value="item.family"
+                >{{ item.family }}</option>
+              </select>
+              <div
+                class="btn"
+                @click="() => setFont()"
+              >应用</div>
+            </div>
+          </div>
+        </div>
         <div v-if="exifOriginal.Make" class="panel">
           <div class="title">EXIF 信息</div>
           <div class="content">
-            <div v-for="item in exifInfo" class="item">
+            <div v-for="(item, index) in exifInfo" :key="index" class="item">
               <div class="label">{{ item.label }}：</div>
               <div class="value">{{ item.value }}</div>
             </div>
@@ -36,7 +55,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { keys } from '@/utils'
 import { convertQualityToBit, file2DataURL, url2Image } from '@/utils/2'
 import * as canvasUtils from '@/utils/canvasUtils'
@@ -47,9 +66,20 @@ import dayjs from 'dayjs'
 import { useCanvas } from '@/hooks/useCanvas'
 import { useChooseImage } from '@/hooks/useChooseImage'
 import { useWatermark, PhotoExif } from '@/hooks/useWatermark'
+import { useAllFont } from '@/hooks/useAllFont'
+import { fonts, fontInit } from '@/config/fonts'
 
 const containerRef = ref()
 const file = ref<File | undefined>(undefined)
+const fontSelect = ref('')
+const config = reactive({
+  scale: 1,
+  width: 0,
+  height: 0,
+  fontWeight: 800,
+  rem: 0.036,
+  fontFamily: ''
+})
 
 // 实例
 const cuInstance = ref<{
@@ -89,17 +119,25 @@ const exifInfo = computed(() => {
   })
 })
 
-const config = reactive({
-  scale: 1,
-  width: 0,
-  height: 0,
-  fontWeight: 800,
-  rem: 0.036,
-  fontFamily: 'PingFangSC-Regular,PingFang,sans-serif'
-})
-
 const cu = useCanvas.init()
 
+const init = async () => {
+  await fontInit()
+  setFont(fonts.value[0]?.family)
+}
+init()
+
+// 设置字体
+async function setFont(v?: string) {
+  if (v) fontSelect.value = v
+  const index = fonts.value.findIndex(f => f.family === fontSelect.value)
+  if (index < 0) return
+
+  const font = fonts.value[index]
+  const isLoad = await useAllFont(cu.value, font)
+  fonts.value[index].isLoad = isLoad
+  if (isLoad) config.fontFamily = font.family
+}
 // 上传
 const onUpload = async () => {
 
@@ -173,21 +211,24 @@ const onDownload = () => {
     margin: 32px auto;
     .sidebar {
       width: 320px;
+      .btn {
+        display: inline-block;
+        cursor: pointer;
+        text-align: center;
+        background-color: white;
+        width: 120px;
+        height: 32px;
+        line-height: 32px;
+        border-radius: 32px;
+        font-size: 14px;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      }
       .btn-group {
         display: flex;
         align-items: center;
         margin: 12px 0 32px;
         .btn {
-          cursor: pointer;
-          text-align: center;
-          background-color: white;
-          width: 120px;
-          height: 32px;
-          line-height: 32px;
-          border-radius: 32px;
-          font-size: 14px;
           margin: 0 auto;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
         }
       }
       .panel {
@@ -204,6 +245,12 @@ const onDownload = () => {
             display: flex;
             align-items: center;
             margin: 8px 0;
+          }
+        }
+        &.font .content {
+          .font-select {
+            flex: 1;
+            margin-right: 12px;
           }
         }
       }

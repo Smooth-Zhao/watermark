@@ -6,6 +6,16 @@ export default class Storage {
 
   constructor() {}
 
+  traverse<T>(
+    cb: (this: T, el: CuElement) => void,
+    context?: T
+  ) {
+    if (!this._roots) return
+    for (let i = 0; i < this._roots.length; i++) {
+      this._roots[i].traverse(cb, context);
+    }
+  }
+
   addRoot(el: CuElement) {
     if (!this._roots) return
 

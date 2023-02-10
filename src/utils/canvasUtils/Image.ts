@@ -13,7 +13,7 @@ interface ImageProps extends ElementProps {
 }
 
 class CUText extends CuElement<ImageProps> {
-  type = 'text';
+  type = 'image';
   width: number = 0;
   height: number = 0;
 
