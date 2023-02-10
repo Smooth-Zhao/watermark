@@ -1,171 +1,229 @@
-<script setup lang="ts">
-import {computed, onMounted, reactive, ref} from "vue";
-import NikonLogo from "./assets/nikon.png"
-import SonyLogo from "./assets/sony.png"
-import FujifilmLogo from "./assets/fujifilm.png"
-import AppleLogo from "./assets/apple.png"
-import exifr from 'exifr'
-import PingFangFont from "./assets/fonts/microsportbold-yz1zy.ttf"
-import dayjs from "dayjs";
-import fonts from "./config/fonts";
-const canvasRef = ref<HTMLCanvasElement>()
-let ctx:CanvasRenderingContext2D
-const canvasConfig = reactive({
-    width:3000,
-    height:2330
+<template>
+  <div class="home">
+    <div class="header">
+      <div class="title">Photo Waterark</div>
+    </div>
+    <div class="main global-container">
+      <div class="sidebar">
+        <div class="btn-group">
+          <div
+            class="upload-btn btn"
+            @click="onUpload"
+          >立即上传</div>
+          <div
+            class="download-btn btn"
+            @click="onDownload"
+          >下载图片</div>
+        </div>
+        <div v-if="exifOriginal.Make" class="panel">
+          <div class="title">EXIF 信息</div>
+          <div class="content">
+            <div v-for="item in exifInfo" class="item">
+              <div class="label">{{ item.label }}：</div>
+              <div class="value">{{ item.value }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="canvas-container">
+        <div
+          ref="containerRef"
+          :class="[{ 'no-canvas': isNull(cu) }]"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, reactive, computed } from 'vue'
+import { keys } from '@/utils'
+import { convertQualityToBit, file2DataURL, url2Image } from '@/utils/2'
+import * as canvasUtils from '@/utils/canvasUtils'
+import { isNull, isNumber } from '@/utils/is'
+import { saveAs } from 'file-saver'
+import dayjs from 'dayjs'
+
+import { useCanvas } from '@/hooks/useCanvas'
+import { useChooseImage } from '@/hooks/useChooseImage'
+import { useWatermark, PhotoExif } from '@/hooks/useWatermark'
+
+const containerRef = ref()
+const file = ref<File | undefined>(undefined)
+
+// 实例
+const cuInstance = ref<{
+  leftText1: canvasUtils.Text;
+  leftText2: canvasUtils.Text;
+  rightText1: canvasUtils.Text;
+  rightText2: canvasUtils.Text;
+  logo: canvasUtils.Image;
+} | null>(null)
+
+// exif 信息
+const exifOriginal = reactive<PhotoExif>({
+  Make: '', // 品牌
+  Model: '', // 型号
+  DateTimeOriginal: null, // 时间
+  FocalLengthIn35mmFormat: 0, // 等效焦距
+  FNumber: 0, // 光圈
+  ISO: 0, // ISO
+  ExposureTime: 0, // 快门速度 / 曝光时间
+  LensModel: ''
 })
-const proportion = computed(()=>document.body.offsetWidth * (document.body.offsetWidth / document.body.offsetHeight > 1 ? 0.6 : 0.9) / canvasConfig.width)
-// onMounted(()=>{
-//     const proportion =  document.body.offsetWidth * 0.4 / canvasConfig.width;
-//     (document.querySelector(".canvas canvas") as HTMLElement).style.transform = `scale(${proportion})`;
-//     (document.querySelector(".canvas img") as HTMLElement).style.transform = `scale(${(document.querySelector(".canvas") as HTMLElement).offsetWidth / 3000 / 0.65})`;
-// })
-const logo = {
-    nikon:NikonLogo,
-    sony:SonyLogo,
-    fujifilm:FujifilmLogo,
-    apple:AppleLogo,
+const exifInfo = computed(() => {
+  return keys(exifOriginal).map(k => {
+    let value = exifOriginal[k]
+    if (k) {
+      // 格式化时间
+      if (k === 'DateTimeOriginal') value = dayjs(value).format('YYYY/MM/DD HH:mm')
+      // 格式化快门速度
+      else if (k === 'ExposureTime' && isNumber(value)) value = `1/${Math.round(1/value)}`
+    } else {
+      value = '无'
+    }
+    return {
+      label: k,
+      value
+    }
+  })
+})
+
+const config = reactive({
+  scale: 1,
+  width: 0,
+  height: 0,
+  fontWeight: 800,
+  rem: 0.036,
+  fontFamily: 'PingFangSC-Regular,PingFang,sans-serif'
+})
+
+const cu = useCanvas.init()
+
+// 上传
+const onUpload = async () => {
+
+  // 选择照片
+  file.value = await useChooseImage()
+  if (!file.value) return
+  console.log('file: ', file)
+
+  // file 照片转换为 base64
+  const photoBase64 = await file2DataURL(file.value)
+  if (!photoBase64) return
+  // 转换为 Image 标签
+  const photo = await url2Image(photoBase64)
+  if (!photo) return
+
+  useCanvas(containerRef.value, { photo, config })
+  
+  if (!cu.value) return
+  // 画上水印
+  cuInstance.value = await useWatermark(cu.value, {
+    photo,
+    config,
+    exifOriginal
+  })
 }
-async function render(photo:HTMLImageElement){
-    const font = new FontFace("PingFang",`url(${PingFangFont})`)
-    document.fonts.add(await font.load())
-    ctx = canvasRef.value?.getContext("2d")!
-    const standardWidth = canvasConfig.width
-    const logoStandardHeight = 140
-    const imageHeight = canvasConfig.height - 330
-    canvasRef.value.width = standardWidth
-    canvasRef.value.height = canvasConfig.height
-    const padding = 50
-    ctx.fillStyle = "white"
-    ctx.fillRect(0,0,canvasRef.value.width,canvasRef.value.height)
-    ctx?.drawImage(photo,0,0,standardWidth,imageHeight)
-    exifr.parse(photo).then(async output => {
-        // 相机型号
-        ctx.beginPath()
-        ctx.textBaseline = "top"
-        ctx.font = `bolder ${standardWidth * 0.02}px PingFangSC-Regular,PingFang,sans-serif`
-        ctx.fillStyle = "black"
-        ctx.fillText(`${output.Model}`, padding * 2, imageHeight + padding * 2)
+// 下载
+const onDownload = () => {
+  const canvas = cu.value?.canvas
+  const ctx = cu.value?.ctx
+  if (!canvas || !ctx || !file.value) return
 
-        ctx.beginPath()
-        ctx.textBaseline = "top"
-        ctx.font = ` ${standardWidth * 0.015}px PingFang, sans-serif`
-        ctx.fillStyle = "#625f5f"
-        ctx.fillText(`${output.Make}`, padding * 2, imageHeight + padding * 2 + standardWidth * 0.03)
-        // 相片参数
-        const params = `${output.FocalLengthIn35mmFormat}mm f/${output.FNumber} ISO${output.ISO} ${output.ShutterSpeedValue > 0 ? '1/' + (Math.pow(2,output.ShutterSpeedValue) << 0):output.ExposureTime}s ${output.ExposureProgram.charAt(0)}`
-        ctx.beginPath()
-        ctx.textBaseline = "top"
-        ctx.font = `bolder ${standardWidth * 0.02}px PingFang, sans-serif`
-        ctx.fillStyle = "black"
-        const textWidth = ctx.measureText(params).width
-        ctx.fillText(
-            params,
-            standardWidth - textWidth - padding * 2,
-            imageHeight + padding * 2
-        )
-
-        // logo
-        await renderLogo(textWidth,output.Make)
-
-        ctx.beginPath()
-        ctx.textBaseline = "top"
-        ctx.font = ` ${standardWidth * 0.015}px PingFang, sans-serif`
-        ctx.fillStyle = "#625f5f"
-        ctx.fillText(
-            `${dayjs(output.DateTimeOriginal).format("YYYY/MM/DD hh:mm")}`,
-            standardWidth - textWidth - padding * 2,
-            imageHeight + padding * 2 + standardWidth * 0.03
-        )
-        ;(document.querySelector(".canvas img") as HTMLImageElement).src = canvasRef.value?.toDataURL("image/jpeg")
-
-    })
-    function getLogo(make:string){
-        make = make.toLowerCase()
-        if (make.includes("nikon")){
-            return logo.nikon
-        }else if (make.includes("sony")){
-            return logo.sony
-        }else if (make.includes("fujifilm")){
-            return logo.fujifilm
-        }else if (make.includes("apple")){
-            return logo.apple
-        }else{
-            return logo.nikon
-        }
-    }
-    function renderLogo(textWidth:number,make:string){
-        const logoImage = new Image()
-        logoImage.src = getLogo(make)
-
-        return new Promise(resolve => {
-            logoImage.onload = ()=>{
-                const logoWidth = logoImage.width / logoImage.height * logoStandardHeight
-                ctx?.drawImage(
-                    logoImage,
-                    standardWidth - textWidth - logoWidth - padding * 3,
-                    imageHeight + padding * 2 - 12,
-                    logoWidth,
-                    logoStandardHeight
-                )
-                resolve("")
-            }
-        })
-    }
-}
-const fileRef = ref<HTMLInputElement>()
-function handleSelectImage(){
-    fileRef.value?.click()
-}
-function onFileChange(event:InputEvent){
-    const inputFile = event.target as HTMLInputElement
-    const fileReader = new FileReader()
-    fileReader.onload = (e)=>{
-        const image = new Image()
-        if (e.target?.result){
-            image.src = e.target.result as string
-            image.onload = ()=>{
-                canvasConfig.height = Math.round(canvasConfig.width / image.width * image.height) + 330
-                console.log(canvasConfig.width , image.width , image.height)
-                render(image)
-            }
-        }
-    }
-    if (inputFile.files && inputFile.files[0]){
-        fileReader.readAsDataURL(inputFile.files[0])
-    }
+  const quality = 92
+  if (['image/jpeg', 'image/jpg'].includes(file.value.type)) {
+    canvas.toBlob(blob => {
+      if (!blob) return
+      saveAs(blob, file.value?.name)
+    }, file.value.type, quality / 100)
+  } else {
+    const imageData = ctx.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    ).data
+    const bit = convertQualityToBit(quality)
+    console.log('bit: ', bit)
+    const png = (window as any).UPNG.encode([imageData.buffer], canvas.width, canvas.height, bit)
+    saveAs(new File([png], file.value.name, {
+      type: file.value.type,
+    }), file.value.name)
+  }
 }
 </script>
 
-<template>
-    <div class="canvas">
-        <canvas ref="canvasRef" :style="{transform: `scale(${proportion})`}"></canvas>
-        <img src="" :style="{transform: `scale(${proportion})`}" alt="" @click="handleSelectImage">
-    </div>
-    <input ref="fileRef" @change="onFileChange" type="file" name="" id="" style="width: 0;height: 0;opacity: 0">
-</template>
-
-<style scoped lang="scss">
-.btn-select-image{
-    font-size: 24px;
-}
-.canvas{
-    width: 60vw;
-    height: 40vw;
+<style lang="scss" scoped>
+.home {
+  .header {
+    height: 80px;
     display: flex;
-    position: relative;
-    justify-content: center;
     align-items: center;
-    canvas,img {
-        position: absolute;
-        width: calc(v-bind('canvasConfig.width') * 1px);
-        height: calc(v-bind('canvasConfig.height') * 1px);
-        will-change: transform;
-        box-shadow: 0 0 15px rgba(0,0,0,.2);
-        transform-origin: center center;
+    justify-content: center;
+    margin-top: 64px;
+    .title {
+      color: #333;
+      font-size: 32px;
+      text-align: center;
     }
-    img{
-        opacity: 0;
+  }
+  .main {
+    display: flex;
+    margin: 32px auto;
+    .sidebar {
+      width: 320px;
+      .btn-group {
+        display: flex;
+        align-items: center;
+        margin: 12px 0 32px;
+        .btn {
+          cursor: pointer;
+          text-align: center;
+          background-color: white;
+          width: 120px;
+          height: 32px;
+          line-height: 32px;
+          border-radius: 32px;
+          font-size: 14px;
+          margin: 0 auto;
+          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+      }
+      .panel {
+        margin: 24px 0;
+        .title {
+          color: #333;
+          font-size: 24px;
+          margin-bottom: 24px;
+        }
+        .content {
+          padding-left: 14px;
+          .item {
+            color: #333;
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+          }
+        }
+      }
     }
+    .canvas-container {
+      flex: 1;
+      .no-canvas {
+        width: 80%;
+        height: 648px;
+        margin: 0 auto;
+        max-width: 648px;
+        background-color: white;
+        box-shadow: 0px 4px 10px 1px #E5E5E5;
+      }
+      :deep(canvas) {
+        display: block;
+        margin: 0 auto;
+        box-shadow: 0px 4px 10px 1px #E5E5E5;
+      }
+    }
+  }
 }
 </style>
