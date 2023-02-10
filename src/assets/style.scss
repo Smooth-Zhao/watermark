@@ -22,6 +22,11 @@ html, body, #app {
   .global-container {
     padding: 0 32px 32px;
     box-sizing: border-box;
-    // overflow: hidden;
+  }
+}
+@media (max-width: 864px) {
+  .global-container {
+    padding: 0;
+    box-sizing: border-box;
   }
 }

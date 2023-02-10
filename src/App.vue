@@ -1,49 +1,47 @@
 <template>
-  <div class="home">
+  <div class="home" @click="showSidebar = false">
     <div class="header">
       <div class="title">Photo Watermark</div>
+      <div
+        :class="['toggle-btn', { show: showSidebar }]"
+        @click.stop="showSidebar = !showSidebar"
+      />
     </div>
     <div class="main global-container">
-      <div class="sidebar">
-        <div class="btn-group">
-          <div
-            class="upload-btn btn"
-            @click="onUpload"
-          >立即上传</div>
-          <div
-            v-if="!isNull(cu)"
-            class="download-btn btn"
-            @click="onDownload"
-          >下载图片</div>
-        </div>
-        <div class="panel font">
-          <div class="title">字体</div>
-          <div class="content">
-            <div style="margin-bottom: 12px;">当前字体：{{ info.fontFamily || '无' }}</div>
-            <div style="display: flex;">
-              <select v-model="fontSelect" class="font-select">
-                <option
-                  v-for="(item, index) in fonts"
-                  :key="index"
-                  :value="item.family"
-                >{{ item.family }}</option>
-              </select>
-              <div
-                class="btn"
-                @click="() => setFont()"
-              >应用</div>
-            </div>
+      <BtnGroup
+        :cu="cu"
+        @download="onDownload"
+        @upload="onUpload"
+        class="mobile-group"
+      />
+      <div :class="['sidebar', { show: showSidebar }]" @click.stop="">
+        <BtnGroup
+          :cu="cu"
+          @download="onDownload"
+          @upload="onUpload"
+        />
+        <Panel title="字体" class="font">
+          <div style="margin-bottom: 12px;">当前字体：{{ info.fontFamily || '无' }}</div>
+          <div style="display: flex;">
+            <select v-model="fontSelect" class="font-select">
+              <option
+                v-for="(item, index) in fonts"
+                :key="index"
+                :value="item.family"
+              >{{ item.family }}</option>
+            </select>
+            <div
+              class="btn"
+              @click="() => setFont()"
+            >应用</div>
           </div>
-        </div>
-        <div v-if="exifOriginal.Make" class="panel">
-          <div class="title">EXIF 信息</div>
-          <div class="content">
-            <div v-for="(item, index) in exifInfo" :key="index" class="item">
-              <div class="label">{{ item.label }}：</div>
-              <div class="value">{{ item.value }}</div>
-            </div>
+        </Panel>
+        <Panel v-if="exifOriginal.Make" title="EXIF 信息">
+          <div v-for="(item, index) in exifInfo" :key="index" class="item">
+            <div class="label">{{ item.label }}：</div>
+            <div class="value">{{ item.value }}</div>
           </div>
-        </div>
+        </Panel>
       </div>
       <div class="canvas-container">
         <div
@@ -71,9 +69,13 @@ import { useWatermark, PhotoExif } from '@/hooks/useWatermark'
 import { useAllFont } from '@/hooks/useAllFont'
 import { ICuInstance, useTextPosition } from '@/hooks/usePosition'
 
+import BtnGroup from '@/components/BtnGroup.vue'
+import Panel from '@/components/Panel.vue'
+
 const containerRef = ref()
 const file = ref<File | undefined>(undefined)
 const fontSelect = ref('')
+const showSidebar = ref(false)
 
 // 实例
 const cuInstance = ref<ICuInstance | null>(null)
@@ -131,7 +133,6 @@ async function setFont(v?: string) {
 }
 // 上传
 const onUpload = async () => {
-
   // 选择照片
   file.value = await useChooseImage()
   if (!file.value) return
@@ -184,12 +185,14 @@ const onDownload = () => {
 
 <style lang="scss" scoped>
 .home {
+  height: 100%;
   .header {
     height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-top: 64px;
+    position: relative;
     .title {
       color: #333;
       font-size: 32px;
@@ -199,6 +202,12 @@ const onDownload = () => {
   .main {
     display: flex;
     margin: 32px auto;
+    .btn-group {
+      display: flex;
+      &.mobile-group {
+        display: none;
+      }
+    }
     .sidebar {
       width: 320px;
       .btn {
@@ -213,28 +222,17 @@ const onDownload = () => {
         font-size: 14px;
         box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
       }
-      .btn-group {
-        display: flex;
-        align-items: center;
-        margin: 12px 0 32px;
-        .btn {
-          margin: 0 auto;
-        }
-      }
-      .panel {
-        margin: 24px 0;
-        .title {
+      :deep(.panel) {
+        .content .item {
           color: #333;
-          font-size: 24px;
-          margin-bottom: 24px;
-        }
-        .content {
-          padding-left: 14px;
-          .item {
-            color: #333;
-            display: flex;
-            align-items: center;
-            margin: 8px 0;
+          display: flex;
+          align-items: flex-start;
+          margin: 8px 0;
+          .label {
+            font-weight: bold;
+          }
+          .value {
+            color: #666;
           }
         }
         &.font .content {
@@ -260,6 +258,85 @@ const onDownload = () => {
         margin: 0 auto;
         box-shadow: 0px 4px 10px 1px #E5E5E5;
       }
+    }
+  }
+}
+@media (max-width: 864px) {
+  .header {
+    margin-top: 0 !important;
+    .title {
+      font-size: 20px !important;
+    }
+    .toggle-btn {
+      position: absolute;
+      right: 12px;
+      width: 26px;
+      height: 2px;
+      background-color: #333;
+      transition: background-color .3s ease-in-out;
+      &::before, &::after {
+        position: absolute;
+        left: 0;
+        content: '';
+        display: block;
+        width: 100%;
+        height: 2px;
+        background-color: #333;
+        transition: all .3s ease-in-out;
+      }
+      &::before {
+        top: -8px;
+      }
+      &::after {
+        bottom: -8px;
+      }
+      &.show {
+        background-color: transparent;
+        &::before {
+          top: 0;
+          transform: rotate(45deg);
+        }
+        &::after {
+          bottom: 0;
+          transform: rotate(-45deg);
+        }
+      }
+    }
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80%;
+    max-width: 420px;
+    height: 100vh;
+    padding: 12px;
+    box-sizing: border-box;
+    background-color: white;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    transform: translateX(-120%);
+    transition: .3s all ease-in-out;
+    :deep(.panel) {
+      .content .item {
+        margin: 12px 0 !important;
+      }
+    }
+    &.show {
+      transform: translateX(0);
+    }
+  }
+  .no-canvas {
+    display: none;
+  }
+  .main {
+    flex-direction: column;
+    margin: 0 0 12px !important;
+  }
+  :deep(.btn-group) {
+    display: none !important;
+    &.mobile-group {
+      display: flex !important;
+      margin: 0px 0 32px !important;
     }
   }
 }
