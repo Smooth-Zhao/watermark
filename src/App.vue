@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="header">
-      <div class="title">Photo Waterark</div>
+      <div class="title">Photo Watermark</div>
     </div>
     <div class="main global-container">
       <div class="sidebar">
