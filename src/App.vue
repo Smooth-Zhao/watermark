@@ -191,7 +191,7 @@ const onDownload = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 64px;
+    padding-top: 64px;
     position: relative;
     .title {
       color: #333;
@@ -263,11 +263,12 @@ const onDownload = () => {
 }
 @media (max-width: 864px) {
   .header {
-    margin-top: 0 !important;
+    padding-top: 0 !important;
     .title {
       font-size: 20px !important;
     }
     .toggle-btn {
+      cursor: pointer;
       position: absolute;
       right: 12px;
       width: 26px;
@@ -312,7 +313,7 @@ const onDownload = () => {
     position: fixed;
     top: 0;
     left: 0;
-    width: 80%;
+    width: 80% !important;
     max-width: 420px;
     height: 100vh;
     padding: 12px;
