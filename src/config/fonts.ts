@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-interface IFontItem {
+export interface IFontItem {
   family: string;
   source: string;
   isLoad: boolean

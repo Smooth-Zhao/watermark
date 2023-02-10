@@ -1,9 +1,9 @@
-import { computed } from 'vue'
 import { url2Image } from '@/utils/2'
 import * as canvasUtils from '@/utils/canvasUtils'
 import exifr from 'exifr'
 import dayjs from 'dayjs'
 import getLogo from '@/config/logo'
+import { info, H1, H2, SPACE, padding } from '@/config'
 
 export interface PhotoExif {
   Make: string; // 品牌
@@ -17,32 +17,18 @@ export interface PhotoExif {
 }
 interface IOpts {
   photo: HTMLImageElement;
-  config: {
-    scale: number,
-    width: number,
-    height: number,
-    fontWeight: number | string,
-    fontFamily: string;
-    rem: number;
-  };
   exifOriginal: PhotoExif;
 }
 export async function useWatermark(cu: canvasUtils.CanvasUtils, {
   photo,
-  config,
   exifOriginal
 }: IOpts) {
-  // 配置
-  const padding = computed(() => config.width * config.rem)
-  const H1 = computed(() => config.width * 0.03)
-  const H2 = computed(() => config.width * 0.02)
-  const SPACE = computed(() => config.width * 0.01)
 
   // 设置照片
   const image = new canvasUtils.Image({
     style: {
       image: photo,
-      width: config.width,
+      width: info.width,
       height: 'auto'
     }
   })
@@ -55,8 +41,8 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
   const logoDom = await url2Image(getLogo(exif.Make))
 
   const fontParams = {
-    fontWeight: config.fontWeight,
-    fontFamily: config.fontFamily
+    fontWeight: info.fontWeight,
+    fontFamily: info.fontFamily
   }
   
   // 左侧文字
@@ -98,7 +84,7 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
       text: photoParams,
       textAlign: 'right',
       size: H1.value,
-      x: config.width - padding.value,
+      x: info.width - padding.value,
       y: image.height + padding.value,
       ...fontParams
     }
@@ -110,7 +96,7 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
       textAlign: 'right',
       color: '#625f5f',
       size: H2.value,
-      x: config.width - padding.value,
+      x: info.width - padding.value,
       y: image.height + padding.value + H1.value + SPACE.value,
       ...fontParams
     }
@@ -127,7 +113,7 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
   const instance = rightText1Width > rightText2Width ? rightText2 : rightText1
   instance.attr({
     style: {
-      x: config.width - padding.value - diff
+      x: info.width - padding.value - diff
     }
   })
 
@@ -139,7 +125,7 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
   const logo = new canvasUtils.Image({
     style: {
       image: logoDom,
-      x: config.width - padding.value - maxWidth - (SPACE.value * 2) - logoWidth,
+      x: info.width - padding.value - maxWidth - (SPACE.value * 2) - logoWidth,
       y: image.height + padding.value + SPACE.value / 2,
       width: logoWidth,
       height: logoHeight

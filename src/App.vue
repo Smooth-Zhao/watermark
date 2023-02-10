@@ -11,6 +11,7 @@
             @click="onUpload"
           >立即上传</div>
           <div
+            v-if="!isNull(cu)"
             class="download-btn btn"
             @click="onDownload"
           >下载图片</div>
@@ -18,7 +19,7 @@
         <div class="panel font">
           <div class="title">字体</div>
           <div class="content">
-            <div style="margin-bottom: 12px;">当前字体：{{ config.fontFamily || '无' }}</div>
+            <div style="margin-bottom: 12px;">当前字体：{{ info.fontFamily || '无' }}</div>
             <div style="display: flex;">
               <select v-model="fontSelect" class="font-select">
                 <option
@@ -55,11 +56,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { keys } from '@/utils'
+import { ref, reactive, computed } from 'vue'
 import { convertQualityToBit, file2DataURL, url2Image } from '@/utils/2'
-import * as canvasUtils from '@/utils/canvasUtils'
 import { isNull, isNumber } from '@/utils/is'
+import { keys } from '@/utils'
+import { fonts, fontInit } from '@/config/fonts'
+import { info } from '@/config'
 import { saveAs } from 'file-saver'
 import dayjs from 'dayjs'
 
@@ -67,28 +69,14 @@ import { useCanvas } from '@/hooks/useCanvas'
 import { useChooseImage } from '@/hooks/useChooseImage'
 import { useWatermark, PhotoExif } from '@/hooks/useWatermark'
 import { useAllFont } from '@/hooks/useAllFont'
-import { fonts, fontInit } from '@/config/fonts'
+import { ICuInstance, useTextPosition } from '@/hooks/usePosition'
 
 const containerRef = ref()
 const file = ref<File | undefined>(undefined)
 const fontSelect = ref('')
-const config = reactive({
-  scale: 1,
-  width: 0,
-  height: 0,
-  fontWeight: 800,
-  rem: 0.036,
-  fontFamily: ''
-})
 
 // 实例
-const cuInstance = ref<{
-  leftText1: canvasUtils.Text;
-  leftText2: canvasUtils.Text;
-  rightText1: canvasUtils.Text;
-  rightText2: canvasUtils.Text;
-  logo: canvasUtils.Image;
-} | null>(null)
+const cuInstance = ref<ICuInstance | null>(null)
 
 // exif 信息
 const exifOriginal = reactive<PhotoExif>({
@@ -136,7 +124,10 @@ async function setFont(v?: string) {
   const font = fonts.value[index]
   const isLoad = await useAllFont(cu.value, font)
   fonts.value[index].isLoad = isLoad
-  if (isLoad) config.fontFamily = font.family
+  if (isLoad) {
+    useTextPosition(cuInstance.value as ICuInstance)
+    info.fontFamily = font.family
+  }
 }
 // 上传
 const onUpload = async () => {
@@ -153,13 +144,12 @@ const onUpload = async () => {
   const photo = await url2Image(photoBase64)
   if (!photo) return
 
-  useCanvas(containerRef.value, { photo, config })
+  useCanvas(containerRef.value, { photo })
   
   if (!cu.value) return
   // 画上水印
   cuInstance.value = await useWatermark(cu.value, {
     photo,
-    config,
     exifOriginal
   })
 }

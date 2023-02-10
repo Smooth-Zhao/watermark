@@ -1,10 +1,10 @@
 import * as canvasUtils from '@/utils/canvasUtils'
+import { IFontItem } from '@/config/fonts'
 
-export async function useAllFont(cu: canvasUtils.CanvasUtils | null, { family, source, isLoad }: {
-  family: string;
-  source: string;
-  isLoad: boolean
-}) {
+export async function useAllFont(
+  cu: canvasUtils.CanvasUtils | null,
+  { family, source, isLoad }: IFontItem
+) {
   try {
     if (!isLoad) {
       const font = new FontFace(family, `url(${source})`);
@@ -12,9 +12,8 @@ export async function useAllFont(cu: canvasUtils.CanvasUtils | null, { family, s
     }
   
     if (!cu) return true
-    console.log('traverse')
+    
     cu.storage?.traverse(function(el) {
-      console.log('el: ', el)
       if (el.type === 'text') {
         el.attr({
           style: {

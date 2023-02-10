@@ -2,23 +2,16 @@ import { ref, Ref } from 'vue'
 import { useCurDevice } from './useCurDevice'
 import * as canvasUtils from '../utils/canvasUtils'
 import { isNull } from '../utils/is'
+import { info } from '@/config'
 
 const { isIOS } = useCurDevice()
 interface IUseCanvasOpts {
   photo: HTMLImageElement;
-  config: {
-    scale: number;
-    width: number;
-    height: number;
-    fontWeight: number;
-    rem: number;
-    fontFamily: string;
-  };
 }
 
 const cu = ref<canvasUtils.CanvasUtils | null>(null)
 
-export function useCanvas(container: HTMLElement, { photo, config }: IUseCanvasOpts) {
+export function useCanvas(container: HTMLElement, { photo }: IUseCanvasOpts) {
 
   // 获取、换算参数
   // 最大 canvas 分辨率有限制, 限制是针对面积
@@ -35,9 +28,9 @@ export function useCanvas(container: HTMLElement, { photo, config }: IUseCanvasO
   }
 
   const { innerWidth } = window
-  config.scale = Math.round(Math.min(innerWidth - 32, 648) / width * 100) / 100
-  config.width = width * config.scale
-  config.height = (height + (width * config.rem * 2) + (width * 0.03) + (width * 0.02) + (width * 0.01)) * config.scale
+  info.scale = Math.round(Math.min(innerWidth - 32, 648) / width * 100) / 100
+  info.width = width * info.scale
+  info.height = (height + (width * info.rem * 2) + (width * 0.03) + (width * 0.02) + (width * 0.01)) * info.scale
 
   // 创建画布
   if (!isNull(cu.value)) {
@@ -45,10 +38,10 @@ export function useCanvas(container: HTMLElement, { photo, config }: IUseCanvasO
   }
 
   cu.value = canvasUtils.init(container, {
-    width: config.width,
-    height: config.height,
+    width: info.width,
+    height: info.height,
     bgColor: 'white',
-    devicePixelRatio: 1 / config.scale
+    devicePixelRatio: 1 / info.scale
   })
 }
 
