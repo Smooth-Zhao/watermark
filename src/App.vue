@@ -5,7 +5,7 @@
       <div
         :class="['toggle-btn', { show: showSidebar }]"
         @click.stop="showSidebar = !showSidebar"
-      />
+      ><span /></div>
     </div>
     <div class="main global-container">
       <BtnGroup
@@ -271,33 +271,38 @@ const onDownload = () => {
       position: absolute;
       right: 12px;
       width: 26px;
-      height: 2px;
-      background-color: #333;
-      transition: background-color .3s ease-in-out;
+      height: 18px;
       &::before, &::after {
-        position: absolute;
-        left: 0;
         content: '';
-        display: block;
+        position: absolute;
+        top: 0;
+      }
+      span {
+        top: calc(50% + 1px);
+        left: 0;
+        transform: translateY(-50%);
+        position: absolute;
+      }
+      &::before, &::after, span {
+        left: 0;
         width: 100%;
         height: 2px;
         background-color: #333;
         transition: all .3s ease-in-out;
       }
-      &::before {
-        top: -8px;
-      }
       &::after {
-        bottom: -8px;
+        top: 100%;
       }
       &.show {
-        background-color: transparent;
+        span {
+          opacity: 0;
+        }
         &::before {
-          top: 0;
+          top: 50%;
           transform: rotate(45deg);
         }
         &::after {
-          bottom: 0;
+          top: 50%;
           transform: rotate(-45deg);
         }
       }
