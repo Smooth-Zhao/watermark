@@ -43,10 +43,15 @@
           </div>
         </Panel>
       </div>
-      <div class="canvas-container">
+      <div
+          class="canvas-container"
+      >
         <div
+          :class="{ 'dragover':isDragover,'no-canvas': isNull(cu) }"
+          @drop="handleDrop"
+          @dragover.prevent="onDrag(1)"
+          @dragleave.prevent="onDrag(0)"
           ref="containerRef"
-          :class="[{ 'no-canvas': isNull(cu) }]"
         />
       </div>
     </div>
@@ -54,9 +59,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from 'vue'
+import {ref, reactive, computed, onMounted} from 'vue'
 import { convertQualityToBit, file2DataURL, url2Image } from '@/utils/2'
-import { isNull, isNumber } from '@/utils/is'
+import {is, isNull, isNumber} from '@/utils/is'
 import { keys } from '@/utils'
 import { fonts, fontInit } from '@/config/fonts'
 import { info } from '@/config'
@@ -72,7 +77,7 @@ import { ICuInstance, useTextPosition } from '@/hooks/usePosition'
 import BtnGroup from '@/components/BtnGroup.vue'
 import Panel from '@/components/Panel.vue'
 
-const containerRef = ref()
+const containerRef = ref<HTMLDivElement>()
 const file = ref<File | undefined>(undefined)
 const curSelectFont = ref('')
 const showSidebar = ref(false)
@@ -137,22 +142,25 @@ const onUpload = async () => {
   file.value = await useChooseImage()
   if (!file.value) return
   console.log('file: ', file)
+    uploadFile(file.value)
+}
+const uploadFile = async (file:File)=>{
 
-  // file 照片转换为 base64
-  const photoBase64 = await file2DataURL(file.value)
-  if (!photoBase64) return
-  // 转换为 Image 标签
-  const photo = await url2Image(photoBase64)
-  if (!photo) return
+    // file 照片转换为 base64
+    const photoBase64 = await file2DataURL(file)
+    if (!photoBase64) return
+    // 转换为 Image 标签
+    const photo = await url2Image(photoBase64)
+    if (!photo) return
 
-  useCanvas(containerRef.value, { photo })
-  
-  if (!cu.value) return
-  // 画上水印
-  cuInstance.value = await useWatermark(cu.value, {
-    photo,
-    exifOriginal
-  })
+    containerRef.value && useCanvas(containerRef.value, { photo })
+
+    if (!cu.value) return
+    // 画上水印
+    cuInstance.value = await useWatermark(cu.value, {
+        photo,
+        exifOriginal
+    })
 }
 // 下载
 const onDownload = () => {
@@ -181,6 +189,22 @@ const onDownload = () => {
     }), file.value.name)
   }
 }
+
+/**
+ * 拖拽上传
+ */
+const isDragover = ref(0)
+const onDrag = (isOver:number) => {
+  isDragover.value = isOver
+}
+const handleDrop = (e:DragEvent) => {
+    e.preventDefault()
+    if (!e.dataTransfer) return
+    const file = e.dataTransfer.files[0]
+    if (!file.type.startsWith("image/")) return;
+    uploadFile(file)
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -257,6 +281,10 @@ const onDownload = () => {
         max-width: 648px;
         background-color: white;
         box-shadow: 0px 4px 10px 1px #E5E5E5;
+        transition: box-shadow .2s ease;
+        &.dragover{
+          box-shadow: 0 4px 15px 1px #bebebe;
+        }
       }
       :deep(canvas) {
         display: block;
