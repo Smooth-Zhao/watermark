@@ -23,7 +23,7 @@
         <Panel title="字体" class="font">
           <div style="margin-bottom: 12px;">当前字体：{{ info.fontFamily || '无' }}</div>
           <div style="display: flex;">
-            <select v-model="fontSelect" class="font-select">
+            <select v-model="curSelectFont" class="font-select">
               <option
                 v-for="(item, index) in fonts"
                 :key="index"
@@ -31,7 +31,7 @@
               >{{ item.family }}</option>
             </select>
             <div
-              class="btn"
+              :class="['btn', { disabled: info.fontFamily === curSelectFont }]"
               @click="() => setFont()"
             >应用</div>
           </div>
@@ -74,7 +74,7 @@ import Panel from '@/components/Panel.vue'
 
 const containerRef = ref()
 const file = ref<File | undefined>(undefined)
-const fontSelect = ref('')
+const curSelectFont = ref('')
 const showSidebar = ref(false)
 
 // 实例
@@ -113,14 +113,14 @@ const cu = useCanvas.init()
 
 const init = async () => {
   await fontInit()
-  setFont(fonts.value[0]?.family)
+  setFont(fonts.value[1]?.family)
 }
 init()
 
 // 设置字体
 async function setFont(v?: string) {
-  if (v) fontSelect.value = v
-  const index = fonts.value.findIndex(f => f.family === fontSelect.value)
+  if (v) curSelectFont.value = v
+  const index = fonts.value.findIndex(f => f.family === curSelectFont.value)
   if (index < 0) return
 
   const font = fonts.value[index]
@@ -221,6 +221,11 @@ const onDownload = () => {
         border-radius: 32px;
         font-size: 14px;
         box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        &.disabled {
+          color: #999;
+          cursor: no-drop;
+          background-color: #eee;
+        }
       }
       :deep(.panel) {
         .content .item {
