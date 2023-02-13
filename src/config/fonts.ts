@@ -9,7 +9,7 @@ export interface IFontItem {
 export const fonts = ref<IFontItem[]>([])
 
 export async function fontInit() {
-  const metaRouters = await import.meta.glob('@/assets/fonts/*.*')
+  const metaRouters = import.meta.glob('@/assets/fonts/*.*')
   for (let key of Object.keys(metaRouters)) {
     const family = key.replace(/(.*\/)*([^.]+).*/ig, '$2')
     const source = await metaRouters[key]() as any
