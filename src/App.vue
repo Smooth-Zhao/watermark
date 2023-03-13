@@ -142,25 +142,26 @@ const onUpload = async () => {
   file.value = await useChooseImage()
   if (!file.value) return
   console.log('file: ', file)
-    uploadFile(file.value)
+  uploadFile(file.value)
 }
 const uploadFile = async (file:File)=>{
+  // file 照片转换为 base64
+  const photoBase64 = await file2DataURL(file)
+  if (!photoBase64) return
+  console.log('photoBase64', photoBase64)
+  // 转换为 Image 标签
+  const photo = await url2Image(photoBase64)
+  console.log(photo)
+  if (!photo) return
 
-    // file 照片转换为 base64
-    const photoBase64 = await file2DataURL(file)
-    if (!photoBase64) return
-    // 转换为 Image 标签
-    const photo = await url2Image(photoBase64)
-    if (!photo) return
+  containerRef.value && useCanvas(containerRef.value, { photo })
 
-    containerRef.value && useCanvas(containerRef.value, { photo })
-
-    if (!cu.value) return
-    // 画上水印
-    cuInstance.value = await useWatermark(cu.value, {
-        photo,
-        exifOriginal
-    })
+  if (!cu.value) return
+  // 画上水印
+  cuInstance.value = await useWatermark(cu.value, {
+    photo,
+    exifOriginal
+  })
 }
 // 下载
 const onDownload = () => {
@@ -198,11 +199,11 @@ const onDrag = (isOver:number) => {
   isDragover.value = isOver
 }
 const handleDrop = (e:DragEvent) => {
-    e.preventDefault()
-    if (!e.dataTransfer) return
-    const file = e.dataTransfer.files[0]
-    if (!file.type.startsWith("image/")) return;
-    uploadFile(file)
+  e.preventDefault()
+  if (!e.dataTransfer) return
+  const file = e.dataTransfer.files[0]
+  if (!file.type.startsWith('image/')) return
+  uploadFile(file)
 }
 
 </script>

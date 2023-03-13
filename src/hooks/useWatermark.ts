@@ -24,6 +24,17 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
   exifOriginal
 }: IOpts) {
 
+  const base_exif = {
+    Make: '', // 品牌
+    Model: '', // 型号
+    DateTimeOriginal: null, // 时间
+    FocalLengthIn35mmFormat: 0, // 等效焦距
+    FNumber: 0, // 光圈
+    ISO: 0, // ISO
+    ExposureTime: 0, // 快门速度 / 曝光时间
+    LensModel: ''
+  }
+
   // 设置照片
   const image = new canvasUtils.Image({
     style: {
@@ -33,7 +44,8 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
     }
   })
   cu.add(image)
-  const exif = await exifr.parse(photo, Object.keys(exifOriginal))
+  const exif = await exifr.parse(photo, Object.keys(base_exif))
+  Object.assign(exifOriginal, base_exif)
   if (exif) Object.assign(exifOriginal, exif)
   console.log('exif: ', exif)
   
@@ -89,7 +101,9 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
       ...fontParams
     }
   })
-  const LensModel = exif.LensModel !== '----' ? exif.LensModel.replace(`${exif.Model} `, '') : ''
+
+  const LensModelValue = (exif?.LensModel || '----')
+  const LensModel = LensModelValue !== '----' ? exif.LensModel.replace(`${exif.Model} `, '') : ''
   const rightText2 = new canvasUtils.Text({
     style: {
       text: LensModel,

@@ -29,14 +29,14 @@ export function file2DataURL(file: File): Promise<string | undefined> {
   })
 }
 export function url2Image(url: string): Promise<HTMLImageElement | undefined> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const image = new Image()
     image.src = url
     image.onload = () => {
       resolve(image)
     }
     image.onerror = () => {
-      reject(undefined)
+      resolve(undefined)
     }
   })
 }
