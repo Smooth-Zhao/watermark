@@ -91,19 +91,21 @@ export async function useWatermark(cu: canvasUtils.CanvasUtils, {
     }, '')
     : ''
 
+  const LensModelValue = (exif?.LensModel || '----')
+  const LensModel = LensModelValue !== '----' ? exif.LensModel.replace(`${exif.Model} `, '') : ''
+
   const rightText1 = new canvasUtils.Text({
     style: {
       text: photoParams,
       textAlign: 'right',
       size: H1.value,
       x: info.width - padding.value,
-      y: image.height + padding.value,
+      y: LensModel
+        ? image.height + padding.value
+        : image.height + padding.value + (H1.value + SPACE.value) / 2,
       ...fontParams
     }
   })
-
-  const LensModelValue = (exif?.LensModel || '----')
-  const LensModel = LensModelValue !== '----' ? exif.LensModel.replace(`${exif.Model} `, '') : ''
   const rightText2 = new canvasUtils.Text({
     style: {
       text: LensModel,
