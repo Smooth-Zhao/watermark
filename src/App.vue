@@ -66,9 +66,9 @@
 </template>
 
 <script lang="ts" setup>
-import {ref, reactive, computed, onMounted} from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { convertQualityToBit, file2DataURL, url2Image } from '@/utils/2'
-import {is, isNull, isNumber} from '@/utils/is'
+import { isNull, isNumber } from '@/utils/is'
 import { keys } from '@/utils'
 import { fonts, fontInit } from '@/config/fonts'
 import { info } from '@/config'
@@ -106,7 +106,7 @@ const exifOriginal = reactive<PhotoExif>({
 const exifInfo = computed(() => {
   return keys(exifOriginal).map(k => {
     let value = exifOriginal[k]
-    if (k) {
+    if (value) {
       // 格式化时间
       if (k === 'DateTimeOriginal') value = dayjs(value).format('YYYY/MM/DD HH:mm')
       // 格式化快门速度
