@@ -47,12 +47,17 @@
           class="canvas-container"
       >
         <div
-          :class="{ 'dragover':isDragover,'no-canvas': isNull(cu) }"
+          :class="{
+            dragover: isDragover,
+            'no-canvas': isNull(cu)
+          }"
           @drop="handleDrop"
           @dragover.prevent="onDrag(1)"
           @dragleave.prevent="onDrag(0)"
           ref="containerRef"
-        />
+        >
+          <div class="tips">可拖拽照片到此处上传</div>
+        </div>
       </div>
     </div>
   </div>
@@ -282,6 +287,14 @@ const handleDrop = (e:DragEvent) => {
     }
     .canvas-container {
       flex: 1;
+      .tips {
+        display: none;
+
+        font-size: 22px;
+        text-align: center;
+        line-height: 648px;
+        user-select: none;
+      }
       .no-canvas {
         width: 80%;
         height: 648px;
@@ -290,6 +303,9 @@ const handleDrop = (e:DragEvent) => {
         background-color: white;
         box-shadow: 0px 4px 10px 1px #E5E5E5;
         transition: box-shadow .2s ease;
+        .tips {
+          display: block;
+        }
         &.dragover{
           box-shadow: 0 4px 15px 1px #bebebe;
         }
