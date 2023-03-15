@@ -1,11 +1,13 @@
 <template>
   <div class="home" @click="showSidebar = false">
     <div class="header">
-      <div class="title">Photo Watermark</div>
       <div
         :class="['toggle-btn', { show: showSidebar }]"
         @click.stop="showSidebar = !showSidebar"
-      ><span /></div>
+      >
+        <span />
+      </div>
+      <div class="title">Photo Watermark</div>
     </div>
     <div class="main global-container">
       <BtnGroup
@@ -36,7 +38,7 @@
             >应用</div>
           </div>
         </Panel>
-        <Panel v-if="exifOriginal.Make" title="EXIF 信息">
+        <Panel v-if="exifOriginal.DateTimeOriginal" title="EXIF 信息">
           <div v-for="(item, index) in exifInfo" :key="index" class="item">
             <div class="label">{{ item.label }}：</div>
             <div class="value">{{ item.value }}</div>
@@ -222,7 +224,7 @@ const handleDrop = (e:DragEvent) => {
 
 <style lang="scss" scoped>
 .home {
-  height: 100%;
+  min-height: 100vh;
   .header {
     height: 80px;
     display: flex;
@@ -327,7 +329,8 @@ const handleDrop = (e:DragEvent) => {
     .toggle-btn {
       cursor: pointer;
       position: absolute;
-      right: 12px;
+      top: 30px;
+      left: 26px;
       width: 26px;
       height: 18px;
       &::before, &::after {
@@ -369,7 +372,7 @@ const handleDrop = (e:DragEvent) => {
   .sidebar {
     position: fixed;
     top: 0;
-    left: 0;
+    right: 0;
     width: 80% !important;
     max-width: 420px;
     height: 100vh;
@@ -377,7 +380,7 @@ const handleDrop = (e:DragEvent) => {
     box-sizing: border-box;
     background-color: white;
     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    transform: translateX(-120%);
+    transform: translateX(120%);
     transition: .3s all ease-in-out;
     :deep(.panel) {
       .content .item {
