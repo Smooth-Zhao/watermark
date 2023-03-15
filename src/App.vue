@@ -140,20 +140,24 @@ async function setFont(v?: string) {
 const onUpload = async () => {
   // 选择照片
   file.value = await useChooseImage()
+  // 未选择照片
   if (!file.value) return
   console.log('file: ', file)
+  // 上传文件
   uploadFile(file.value)
 }
+// 上传文件
 const uploadFile = async (file:File)=>{
   // file 照片转换为 base64
   const photoBase64 = await file2DataURL(file)
+  // 转换失败
   if (!photoBase64) return
-  console.log('photoBase64', photoBase64)
   // 转换为 Image 标签
   const photo = await url2Image(photoBase64)
-  console.log(photo)
+  // 转换失败
   if (!photo) return
 
+  // 应用画布
   containerRef.value && useCanvas(containerRef.value, { photo })
 
   if (!cu.value) return
@@ -169,13 +173,16 @@ const onDownload = () => {
   const ctx = cu.value?.ctx
   if (!canvas || !ctx || !file.value) return
 
+  // 压缩照片
   const quality = 92
   if (['image/jpeg', 'image/jpg'].includes(file.value.type)) {
+    // jpg 的压缩
     canvas.toBlob(blob => {
       if (!blob) return
       saveAs(blob, file.value?.name)
     }, file.value.type, quality / 100)
   } else {
+    // png 的压缩
     const imageData = ctx.getImageData(
       0,
       0,
@@ -201,9 +208,9 @@ const onDrag = (isOver:number) => {
 const handleDrop = (e:DragEvent) => {
   e.preventDefault()
   if (!e.dataTransfer) return
-  const file = e.dataTransfer.files[0]
-  if (!file.type.startsWith('image/')) return
-  uploadFile(file)
+  file.value = e.dataTransfer.files[0]
+  if (!file.value.type.startsWith('image/')) return
+  uploadFile(file.value)
 }
 
 </script>

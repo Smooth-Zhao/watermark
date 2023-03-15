@@ -39,6 +39,7 @@ const props = withDefaults(defineProps<{
     line-height: 32px;
     border-radius: 32px;
     font-size: 14px;
+    user-select: none;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   }
 }
